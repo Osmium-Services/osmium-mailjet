@@ -1,0 +1,50 @@
+{
+    "id": "mailjet",
+    "name": "Mailjet",
+    "version": "1.0.0",
+    "description": "Send site email through Mailjet's HTTP API - a free plan of 6,000 emails a month, and useful where hosting blocks outbound SMTP. Appears as a provider on the Email settings page.",
+    "category": "email",
+    "author": {
+        "name": "Gavin Cox"
+    },
+    "license": "proprietary",
+    "requires": {
+        "osmium": ">=1.0.0",
+        "php": ">=8.1",
+        "services": []
+    },
+    "autoload": [
+        "models"
+    ],
+    "admin": {
+        "menu": {
+            "section": "Content",
+            "items": [
+                {
+                    "id": "mailjet",
+                    "label": "Mailjet",
+                    "icon": "bx bx-envelope",
+                    "route": "admin/settings/mailjet",
+                    "activePattern": "admin/settings/mailjet",
+                    "role": null
+                }
+            ]
+        },
+        "routes": {
+            "admin/settings/mailjet": {
+                "controller": "controllers/MailjetController.php",
+                "class": "Osmium\\Services\\Mailjet\\Controllers\\MailjetController",
+                "method": "index",
+                "title": "Mailjet"
+            }
+        }
+    },
+    "hooks": {
+        "mail.providers": [
+            "Osmium\\Services\\Mailjet\\Models\\MailjetMailProvider::provider"
+        ]
+    },
+    "setup": {
+        "postInstallNote": "Enter a Mailjet API key and secret key on the Mailjet settings page, and make sure the From address on Settings > Email is a verified sender or domain in Mailjet. Then choose Mailjet as the Provider on Settings > Email and use Send test email."
+    }
+}
