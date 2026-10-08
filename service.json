@@ -1,7 +1,7 @@
 {
     "id": "mailjet",
     "name": "Mailjet",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Send site email through Mailjet's HTTP API - a free plan of 6,000 emails a month, and useful where hosting blocks outbound SMTP. Appears as a provider on the Email settings page.",
     "category": "email",
     "author": {

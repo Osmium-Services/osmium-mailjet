@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Osmium\Services\Mailjet\Models;
 
-use Osmium\Core\Library\MailerInterface;
+use Osmium\Core\Library\PlainTextMailer;
 
 /**
  * Sends mail via Mailjet's Send API v3.1 (JSON POST with HTTP basic auth: API
@@ -16,7 +16,7 @@ use Osmium\Core\Library\MailerInterface;
  * Mailjet only sends from a verified sender or domain, so the From address on
  * the Email settings page must be one.
  */
-class MailjetMailer implements MailerInterface
+class MailjetMailer implements PlainTextMailer
 {
     private const SEND_URL = 'https://api.mailjet.com/v3.1/send';
 
@@ -26,10 +26,15 @@ class MailjetMailer implements MailerInterface
      * @param array<int, array{email: string, name?: string}> $recipients
      * @return array{success: bool, error?: string}
      */
-    public function send(array $recipients, string $subject, string $htmlBody): array
+    public function send(array $recipients, string $subject, string $htmlBody, ?string $textBody = null): array
     {
         try {
-            $this->postMessage($recipients, $subject, $htmlBody);
+            $this->postMessage(
+                recipients: $recipients,
+                subject: $subject,
+                htmlBody: $htmlBody,
+                textBody: $textBody,
+            );
             return ['success' => true];
         } catch (\Exception $e) {
             return ['success' => false, 'error' => $e->getMessage()];
@@ -39,7 +44,7 @@ class MailjetMailer implements MailerInterface
     /**
      * @param array<int, array{email: string, name?: string}> $recipients
      */
-    private function postMessage(array $recipients, string $subject, string $htmlBody): void
+    private function postMessage(array $recipients, string $subject, string $htmlBody, ?string $textBody): void
     {
         $notReady = !MailjetConfig::isReady();
         if ($notReady) throw new \RuntimeException('Mailjet is not configured: set the API key and secret key on the Mailjet settings page.');
@@ -60,15 +65,20 @@ class MailjetMailer implements MailerInterface
             $recipients,
         );
 
+        $message = [
+            'From' => $from,
+            'To' => $to,
+            'Subject' => $subject,
+            'HTMLPart' => $htmlBody,
+        ];
+        $hasText = $textBody !== null;
+        if ($hasText) $message['TextPart'] = $textBody;
+        $payload = \json_encode(['Messages' => [$message]]);
+
         $ch = \curl_init(self::SEND_URL);
         \curl_setopt_array($ch, [
             CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => \json_encode(['Messages' => [[
-                'From' => $from,
-                'To' => $to,
-                'Subject' => $subject,
-                'HTMLPart' => $htmlBody,
-            ]]]),
+            CURLOPT_POSTFIELDS => $payload,
             CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
             CURLOPT_USERPWD => $mailjet->apiKey . ':' . $mailjet->secretKey,
             CURLOPT_RETURNTRANSFER => true,
